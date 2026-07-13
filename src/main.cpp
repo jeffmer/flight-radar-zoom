@@ -56,7 +56,7 @@ void setup()
   // delay(1000); // avoids immediate serial output being cut off - uncomment if needed
 
   statusLed.begin();
-  statusLed.setBrightness(200);
+  statusLed.setBrightness(50);
   statusLed.clear();
   statusLed.show();
 
@@ -106,11 +106,11 @@ void loop()
   {
     if (pos > lastEncoderPos)
     {
-      aircraftManager.SelectNextAircraft();
+      aircraftManager.SelectPreviousAircraft();
     }
     else
     {
-      aircraftManager.SelectPreviousAircraft();
+      aircraftManager.SelectNextAircraft();
     }
 
     lastEncoderPos = pos;

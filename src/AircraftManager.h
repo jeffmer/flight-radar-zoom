@@ -13,6 +13,10 @@ private:
     double lat = 0.0;
     double lon = 0.0;
     double rad = 0.2;
+    String airportId = "";
+    double airportLat = 0.0;
+    double airportLon = 0.0;
+
     std::map<String, TrackedAircraft> trackedAircraft;
 
     bool displayInfoText = true;
@@ -27,6 +31,9 @@ private:
     LGFX &tft;
 
     void DrawRadarCircles(LGFX_Sprite &backbuffer) const;
+    void DrawAirport(LGFX_Sprite &backbuffer) const;
+    void DrawZoom(LGFX_Sprite &backbuffer) const;
+    void DrawDetails(LGFX_Sprite &backbuffer) const;
     std::pair<int, int> ProjectCoordinateToScreen(float predLat, float predLon) const;
     void DrawAircraftInfo(LGFX_Sprite &backbuffer, int x, int y, const TrackedAircraft &tracked) const;
     void DrawAircraftTriangle(LGFX_Sprite &backbuffer, int x, int y, const TrackedAircraft &tracked, bool selected) const;
@@ -46,5 +53,6 @@ public:
     void SelectNextAircraft();
     void SelectPreviousAircraft();
     void DrawDetails(LGFX_Sprite &backbuffer);
+    void DrawZoom(LGFX_Sprite &backbuffer);
     void EncoderClick();
 };

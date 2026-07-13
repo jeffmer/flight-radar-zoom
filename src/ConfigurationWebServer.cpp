@@ -55,6 +55,40 @@ static const char CONFIG_HTML[] PROGMEM = R"(
                 </label>
 
                 <label class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                    <span>Airport Name or  Code:</span>
+                    <input
+                        name="airport-id"
+                        value='%AIRPORT_ID%'
+                        class="flex-1 border border-green-500 bg-gray-900 w-full px-3 py-2 text-lg sm:text-base sm:px-1 sm:py-0">
+                </label>
+
+                <div class="flex flex-col sm:flex-row gap-4 sm:gap-5">
+                    <label class="flex flex-col sm:flex-row gap-2 flex-1">
+                        <span>Airport (Lat):</span>
+                        <input
+                            name="air-lat"
+                            type="number"
+                            min="-90"
+                            step="0.000001"
+                            max="90"
+                            value='%AIR_LAT%'
+                            class="border border-green-500 bg-gray-900 w-full px-3 py-2 text-lg sm:text-base sm:px-1 sm:py-0">
+                    </label>
+
+                    <label class="flex flex-col sm:flex-row gap-2 flex-1">
+                        <span>Airport (Long):</span>
+                        <input
+                            name="air-long"
+                            type="number"
+                            min="-180"
+                            step="0.000001"
+                            max="180"
+                            value='%AIR_LONG%'
+                            class="border border-green-500 bg-gray-900 w-full px-3 py-2 text-lg sm:text-base sm:px-1 sm:py-0">
+                    </label>
+                </div>
+
+                <label class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                     <span>OpenSkyAPI Client ID:</span>
                     <input
                         name="opensky-id"
@@ -138,6 +172,9 @@ void ConfigurationWebServer::Initialise()
         const String latitude = prefs.getString("latitude", "");
         const String longitude = prefs.getString("longitude", "");
         const String radius = prefs.getString("radius", "1.0");
+        const String airportId = prefs.getString("airport-id", "");
+        const String airLat = prefs.getString("air-lat", "");
+        const String airLong = prefs.getString("air-long", "");
         const String openskyClientId = prefs.getString("opensky-id", "");
         String openskySecret = prefs.getString("opensky-secret", "");
         const String scanlineEnabled = prefs.getString("scanline", "true");
@@ -152,11 +189,14 @@ void ConfigurationWebServer::Initialise()
         AsyncWebServerResponse* response = request->beginResponse(
             200, "text/html",
             (const uint8_t*)CONFIG_HTML, sizeof(CONFIG_HTML) - 1,
-            [latitude, longitude, radius, openskyClientId, openskySecret, scanlineEnabled, infoTextEnabled, triangleEnabled]
+            [latitude, longitude, radius, airportId, airLat, airLong, openskyClientId, openskySecret, scanlineEnabled, infoTextEnabled, triangleEnabled]
             (const String& var) -> String {
                 if (var == "LATITUDE")       return latitude;
                 if (var == "LONGITUDE")      return longitude;
                 if (var == "RADIUS")         return radius;
+                if (var == "AIRPORT_ID")     return airportId;
+                if (var == "AIR_LAT")         return airLat;
+                if (var == "AIR_LONG")        return airLong;
                 if (var == "OPENSKY_ID")     return openskyClientId;
                 if (var == "OPENSKY_SECRET") return openskySecret;
                 if (var == "SCANLINE")       return scanlineEnabled == "true" ? "checked" : "";
@@ -187,6 +227,9 @@ void ConfigurationWebServer::Initialise()
         TrySaveParam("latitude");
         TrySaveParam("longitude");
         TrySaveParam("radius");
+        TrySaveParam("airport-id");
+        TrySaveParam("air-lat");
+        TrySaveParam("air-long");
         TrySaveParam("opensky-id");
 
         const auto* param = request->getParam("opensky-secret", true);

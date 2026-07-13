@@ -9,7 +9,8 @@ constexpr int SCREEN_SIZE_DIV_2 = (SCREEN_SIZE / 2);
 enum ScreenMode
 {
     SCREEN_RADAR,
-    SCREEN_DETAILS
+    SCREEN_DETAILS,
+    SCREEN_ZOOM
 };
 
 ScreenMode currentScreen = SCREEN_RADAR;
@@ -47,6 +48,9 @@ void AircraftManager::Initialise()
     lat = configServer.GetStoredString("latitude").toDouble();
     lon = configServer.GetStoredString("longitude").toDouble();
     rad = configServer.GetStoredString("radius").toDouble();
+    airportId = configServer.GetStoredString("airport-id");
+    airportLat = configServer.GetStoredString("air-lat").toDouble();
+    airportLon = configServer.GetStoredString("air-long").toDouble();    
 
     // configuration
     const String renderText = configServer.GetStoredString("infotext");
@@ -192,7 +196,7 @@ void AircraftManager::DrawDetails(LGFX_Sprite &backbuffer)
     y += LINE;
 
     backbuffer.drawString(
-        "SPD " + String((int)tracked.state.velocity) + " m/s",
+        "SPD " + String((int)(tracked.state.velocity * 2.237)) + " mph",
         CENTRE,
         y);
 
@@ -227,12 +231,55 @@ void AircraftManager::DrawDetails(LGFX_Sprite &backbuffer)
         y);
 }
 
+void AircraftManager::DrawZoom(LGFX_Sprite &backbuffer)
+{
+    backbuffer.fillScreen(TFT_BLACK);
+
+    constexpr int CENTRE = SCREEN_SIZE_DIV_2 - 1;
+    constexpr int OUTER = SCREEN_SIZE_DIV_2 - 5;
+
+    // Outer circular frame
+    backbuffer.drawCircle(
+        CENTRE,
+        CENTRE,
+        OUTER,
+        lgfx::color888(0, 200, 0));
+
+   
+    backbuffer.setTextColor(lgfx::color888(0, 255, 0));
+    backbuffer.setTextDatum(textdatum_t::middle_center);
+
+
+    backbuffer.setTextSize(2);
+    backbuffer.drawString(
+        "RADIUS " + String((int)(rad*60)) + " NM",
+        CENTRE,
+        CENTRE);
+
+    backbuffer.setTextSize(1);
+    backbuffer.setTextColor(lgfx::color888(0, 100, 0));
+
+    backbuffer.drawString(
+        "< Rotate >",
+        CENTRE,
+        CENTRE+50);
+
+
+    backbuffer.drawString(
+        "Click to return",
+        CENTRE,
+        CENTRE+70);
+}
+
 void AircraftManager::EncoderClick()
 {
-    currentScreen =
-        (currentScreen == SCREEN_RADAR)
-            ? SCREEN_DETAILS
-            : SCREEN_RADAR;
+
+/*   Serial.print("EncoderClick ");
+    Serial.println(int(currentScreen));
+*/ 
+    if (currentScreen == SCREEN_RADAR) currentScreen = SCREEN_DETAILS;
+    else if (currentScreen == SCREEN_DETAILS) currentScreen = SCREEN_ZOOM;
+    else if (currentScreen == SCREEN_ZOOM) currentScreen = SCREEN_RADAR;
 }
 
 void AircraftManager::Draw(LGFX_Sprite &backbuffer)
@@ -251,9 +298,17 @@ void AircraftManager::Draw(LGFX_Sprite &backbuffer)
     {
         DrawDetails(backbuffer);
         return;
+    } 
+
+    if (currentScreen == SCREEN_ZOOM)
+    {
+        DrawZoom(backbuffer);
+        return;
     }
 
     DrawRadarCircles(backbuffer);
+
+    DrawAirport(backbuffer);
 
     visibleAircraft.clear();
 
@@ -316,6 +371,12 @@ void AircraftManager::Draw(LGFX_Sprite &backbuffer)
 uint32_t AircraftManager::GetAircraftColour(
     const TrackedAircraft &tracked) const
 {
+    float alt = tracked.state.baroAltitude;
+    if (alt>10000.0) return lgfx::color565(100, 200, 255); // Sky blue
+    if (alt>5000.0) return lgfx::color565(255, 128, 0); // Peach  
+    return lgfx::color565(255, 0, 100);  // 
+
+    /*
     uint32_t hash = 0;
 
     for (char c : tracked.state.icao24)
@@ -323,10 +384,17 @@ uint32_t AircraftManager::GetAircraftColour(
 
     return AircraftColours[hash % (sizeof(AircraftColours) /
                                    sizeof(AircraftColours[0]))];
+    */
 }
 
 void AircraftManager::SelectNextAircraft()
 {
+    if (currentScreen==SCREEN_ZOOM){
+        if (rad <= 1.8) rad += 0.2;
+        else rad = 2.0; // set upper limit
+        return;
+    }
+
     if (visibleAircraft.empty())
         return;
 
@@ -335,15 +403,24 @@ void AircraftManager::SelectNextAircraft()
     if (selectedAircraftIndex >= visibleAircraft.size())
         selectedAircraftIndex = 0;
 
+   /*
     Serial.print("Aircraft count: ");
     Serial.println(visibleAircraft.size());
 
     Serial.print("Selected index: ");
     Serial.println(selectedAircraftIndex);
+    */
 }
 
 void AircraftManager::SelectPreviousAircraft()
 {
+
+    if (currentScreen==SCREEN_ZOOM){
+        if (rad >= 0.4) rad -= 0.2;
+        else rad = 0.2; //set lower limit
+        return;
+    }
+    
     if (visibleAircraft.empty())
         return;
 
@@ -353,8 +430,21 @@ void AircraftManager::SelectPreviousAircraft()
         selectedAircraftIndex =
             visibleAircraft.size() - 1;
 
-    Serial.print("Selected previous aircraft, index: ");
-    Serial.println(selectedAircraftIndex);
+//    Serial.print("Selected previous aircraft, index: ");
+ //   Serial.println(selectedAircraftIndex);
+}
+
+void AircraftManager::DrawAirport(LGFX_Sprite &backbuffer) const
+{
+    if (airportId.isEmpty()) return;
+    if (airportLat < lat - rad || airportLat > lat + rad) return;
+    if (airportLon < lon - rad || airportLon > lon + rad) return;   
+    auto [ax, ay] = ProjectCoordinateToScreen(airportLat, airportLon);
+    backbuffer.fillCircle(ax, ay, 4, lgfx::color888(255, 0, 0));
+    backbuffer.setTextSize(1);
+    backbuffer.setTextColor(lgfx::color888(255, 0, 0));
+    backbuffer.setTextDatum(textdatum_t::middle_center);
+    backbuffer.drawString(airportId, ax, ay + 12);
 }
 
 void AircraftManager::DrawRadarCircles(LGFX_Sprite &backbuffer) const
@@ -363,8 +453,8 @@ void AircraftManager::DrawRadarCircles(LGFX_Sprite &backbuffer) const
     constexpr int OUTER = SCREEN_SIZE_DIV_2 - 5;
 
     backbuffer.drawCircle(CENTRE, CENTRE, OUTER, lgfx::color888(0, 200, 0));
-    backbuffer.drawCircle(CENTRE, CENTRE, (OUTER / 3) * 2, lgfx::color888(0, 64, 0));
-    backbuffer.drawCircle(CENTRE, CENTRE, OUTER / 3, lgfx::color888(0, 32, 0));
+    backbuffer.drawCircle(CENTRE, CENTRE, (OUTER / 3) * 2, lgfx::color888(0, 100, 0));
+    backbuffer.drawCircle(CENTRE, CENTRE, OUTER / 3, lgfx::color888(0, 100, 0));
 }
 
 std::pair<int, int> AircraftManager::ProjectCoordinateToScreen(float predLat, float predLon) const
@@ -429,6 +519,7 @@ void AircraftManager::DrawAircraftTriangle(
         selected
             ? lgfx::color888(255, 255, 255) // White
             : GetAircraftColour(tracked);
+
 
     constexpr float BODY_FRONT = 8.0f;
     constexpr float BODY_REAR = 6.0f;
