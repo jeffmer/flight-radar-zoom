@@ -275,13 +275,14 @@ void AircraftManager::DrawZoom(LGFX_Sprite &backbuffer)
 
 void AircraftManager::EncoderClick()
 {
-
-/*   Serial.print("EncoderClick ");
-    Serial.println(int(currentScreen));
-*/ 
     if (currentScreen == SCREEN_RADAR) currentScreen = SCREEN_DETAILS;
-    else if (currentScreen == SCREEN_DETAILS) currentScreen = SCREEN_ZOOM;
-    else if (currentScreen == SCREEN_ZOOM) currentScreen = SCREEN_RADAR;
+    else if (currentScreen == SCREEN_DETAILS || currentScreen == SCREEN_ZOOM) currentScreen = SCREEN_RADAR;
+}
+
+void AircraftManager::EncoderLongClick()
+{
+    if (currentScreen == SCREEN_RADAR || currentScreen == SCREEN_DETAILS) currentScreen = SCREEN_ZOOM;
+    else currentScreen = SCREEN_RADAR;
 }
 
 void AircraftManager::Draw(LGFX_Sprite &backbuffer)

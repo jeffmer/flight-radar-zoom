@@ -55,4 +55,5 @@ public:
     void DrawDetails(LGFX_Sprite &backbuffer);
     void DrawZoom(LGFX_Sprite &backbuffer);
     void EncoderClick();
+    void EncoderLongClick();
 };

@@ -38,6 +38,7 @@ OpenSkyAuthTokenHandler authHandler(http);
 
 ESP32Encoder encoder;
 int64_t lastEncoderPos = 0;
+int64_t buttonTime = 0;
 
 AircraftManager aircraftManager(configServer, authHandler, http, tft);
 
@@ -120,12 +121,18 @@ void loop()
 
   bool currentButtonState = digitalRead(ENCODER_SW);
 
-  if (lastButtonState == HIGH &&
-      currentButtonState == LOW)
-  {
-    aircraftManager.EncoderClick();
-  }
 
+  if (lastButtonState == HIGH && currentButtonState == LOW)
+  {
+    buttonTime = millis(); // start time
+  } 
+  else if (lastButtonState == LOW && currentButtonState == HIGH) 
+  {
+    if (millis()- buttonTime <1000)
+       aircraftManager.EncoderClick();
+    else
+       aircraftManager.EncoderLongClick();
+  }
   lastButtonState = currentButtonState;
 
   if (aircraftManager.Update()) 
