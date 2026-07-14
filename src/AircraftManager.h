@@ -47,7 +47,7 @@ public:
     ~AircraftManager() = default;
 
     void Initialise();
-    void Update();
+    bool Update();
     void Draw(LGFX_Sprite &backbuffer);
     uint32_t GetAircraftColour(const TrackedAircraft &tracked) const;
     void SelectNextAircraft();

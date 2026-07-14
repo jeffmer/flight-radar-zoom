@@ -74,7 +74,7 @@ void AircraftManager::Initialise()
     fetchInterval = MS_PER_DAY / dailyRequestBudget;
 }
 
-void AircraftManager::Update()
+bool AircraftManager::Update()
 {
     unsigned long now = millis();
 
@@ -106,7 +106,7 @@ void AircraftManager::Update()
         {
             Serial.print("[WARN] OpenSky API request failed: ");
             Serial.println(result.errorMessage);
-            return;
+            return true; // return true to avoid flickering the LED
         }
 
         // track
@@ -134,7 +134,9 @@ void AircraftManager::Update()
             else
                 ++it;
         }
+        return true;
     }
+    return false;
 }
 
 void AircraftManager::DrawDetails(LGFX_Sprite &backbuffer)

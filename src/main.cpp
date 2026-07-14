@@ -77,7 +77,7 @@ void setup()
   tft.setTextColor(lgfx::color888(0, 255, 0));
   tft.drawCentreString("Connecting to WiFi...", SCREEN_SIZE / 2, SCREEN_SIZE / 2);
 
-  SetLed(255, 255, 0); // WiFi connecting
+  SetLed(255, 0, 0); // WiFi connecting
 
   WiFiManagerHelpers::ConfigureWiFiManager(wm, tft);
   wm.autoConnect(WiFiManagerHelpers::WiFiManagerName);
@@ -128,8 +128,12 @@ void loop()
 
   lastButtonState = currentButtonState;
 
-  SetLed(0, 255, 255); // Fetching
-  aircraftManager.Update();
+  if (aircraftManager.Update()) 
+  {
+    SetLed(255, 0, 0); // Fetching
+  } else {
+    SetLed(0, 255, 0); // Running
+  }
 
   // draw cycle
   backbuffer.fillScreen(lgfx::color888(0, 0, 0));
@@ -147,6 +151,4 @@ void loop()
 
   aircraftManager.Draw(backbuffer);
   backbuffer.pushSprite(0, 0);
-
-  SetLed(0, 255, 0); // Running
 }
